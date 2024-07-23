@@ -4,55 +4,57 @@ import { registerRequest, loginRequest } from '../api/auth';
 export const AuthContext = createContext();
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 }
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authErrors, setAuthErrors] = useState(null);
+    const [user, setUser] = useState(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [authErrors, setAuthErrors] = useState(null); // Añadir estado de errores de autenticación
 
-  const signup = async (userData) => {
-    try {
-      const res = await registerRequest(userData);
-      setAuthErrors(null);
-      return true;
-    } catch (error) {
-      console.error('Error en el registro:', error);
-      setAuthErrors(error.message); // Cambiar a error.message para mostrar el mensaje de error
-      return false;
+    const signup = async (userData) => {
+        try {
+            const res = await registerRequest(userData);
+            setUser(res.data); 
+            setIsAuthenticated(true);
+            setAuthErrors(null); // Limpiar errores previos
+            return true;
+        } catch (error) {
+            console.error('Error en el registro:', error);
+            setAuthErrors(error.response.data.message); // Establecer errores de autenticación
+            return false;
+        }
+    };
+
+    const signin = async (userData) => {
+        try {
+            const res = await loginRequest(userData);
+            setUser(res.data);
+            setIsAuthenticated(true);
+            setAuthErrors(null); // Limpiar errores previos
+            return { error: false };
+        } catch (error) {
+            console.error('Error en el inicio de sesión:', error);
+            setAuthErrors(error.response.data.message); // Establecer errores de autenticación
+            return { error: true };
+        }
     }
-  };
 
-  const signin = async (user) => {
-    try {
-      const res = await loginRequest(user);
-      setUser(res.data);
-      setIsAuthenticated(true);
-      setAuthErrors(null);
-      return { success: true };
-    } catch (error) {
-      console.error('Error en el inicio de sesión:', error);
-      setAuthErrors(error.message); // Cambiar a error.message para mostrar el mensaje de error
-      return { success: false, error: error.message };
-    }
-  }
-
-  return (
-    <AuthContext.Provider 
-      value={{
-        signup,
-        signin,
-        user,
-        isAuthenticated,
-        authErrors,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+    return (
+        <AuthContext.Provider 
+            value={{
+                signup,
+                signin,
+                user,
+                isAuthenticated,
+                authErrors // Proveer el estado de errores de autenticación
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
 }
